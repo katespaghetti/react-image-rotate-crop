@@ -5,9 +5,6 @@ import './App.scss';
 
 export default class App extends React.Component {
   render() {
-    const style= {
-      border: "1px solid red"
-    }
 
     return(
       <div style={style}>

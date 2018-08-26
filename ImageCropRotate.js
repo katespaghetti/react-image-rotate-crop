@@ -7,8 +7,6 @@ import { defaultImage } from './defaultImage.jpeg';
 export default class ImageCropRotate extends PureComponent {
     state = {
       hidden: true,
-
-      loading: true,
       imageUrl: defaultImage,
       newImageUrl: null,
       rotationDegrees: 0,
@@ -24,6 +22,7 @@ export default class ImageCropRotate extends PureComponent {
     }
 
     onImageLoaded = (image) => {
+    	console.log("loaded")
         const crop = 
             makeAspectCrop({
                 x: 0,
@@ -71,7 +70,7 @@ export default class ImageCropRotate extends PureComponent {
             this.getImageStateAndProps(),
             true,
             (dataUrl) => {
-                this.props.updateImage(dataUrl)
+                this.state.updateImage(dataUrl)
             }
         );
     }
@@ -102,6 +101,7 @@ export default class ImageCropRotate extends PureComponent {
     }
 
     handleImageChange = (e) => {
+    	console.log("beep")
         e.preventDefault();
         const reader = new FileReader();
         const file = e.target.files[0];
@@ -118,10 +118,10 @@ export default class ImageCropRotate extends PureComponent {
 
         getRotatedImg(
             {
-                imagePreviewUrl: this.props.imagePickerUrl,
+                imagePreviewUrl: this.state.imagePickerUrl,
                 width: originalImgWidth,
                 height: originalImgHeight,
-                degrees: this.props.rotationDegrees + rotationDegrees
+                degrees: this.state.rotationDegrees + rotationDegrees
             },
             (dataUrl) => {
                 this.setState({newImageUrl: dataUrl});
@@ -133,6 +133,16 @@ export default class ImageCropRotate extends PureComponent {
     cancelImageUpload = (e) => {
         e.preventDefault();
         this.props.cancelImageUpload();
+    }
+
+    getBackgroundImage = () => {
+    	if (this.state.defaultImage != true) {
+            const style = {
+                backgroundImage: `url(${this.state.newImageUrl})`
+            }
+
+            return style;
+        }
     }
 
     render() {
@@ -183,7 +193,7 @@ export default class ImageCropRotate extends PureComponent {
                       </div>
                   }
 
-                  <div className="image-preview-container">
+                  <div className="image-preview-container" style={this.getBackgroundImage()}>
                       <ReactCrop
                           onChange={this.onChange}
                           onImageLoaded={this.onImageLoaded}
