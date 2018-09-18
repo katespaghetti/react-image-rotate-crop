@@ -8,9 +8,18 @@ export default class ImageCropRotate extends PureComponent {
 	state = {
 		file: "",
         imagePreviewUrl: null,
+        newImageUrl: null,
+        imagePickerUrl: '',
         rotationDegrees: 0,
         hidden: true
 	}
+
+	getImageStateAndProps = () => {
+        return ({
+            ...this.state,
+            imagePreviewUrl: this.state.imagePickerUrl
+        })
+    }
 
 	onImageLoaded = (image) => {
     	console.log("loaded")
@@ -77,6 +86,8 @@ export default class ImageCropRotate extends PureComponent {
 	    let reader = new FileReader();
 	    let file = e.target.files[0];
 
+	    console.log("what is reader.result", reader.result)
+
 	    reader.onloadend = () => {
 			this.setState({
 				file,
@@ -91,6 +102,8 @@ export default class ImageCropRotate extends PureComponent {
         this.setState({
             rotationDegrees: (this.state.rotationDegrees + rotationDegrees) % 360
         });
+
+        this.props.rotateImageCallback(rotationDegrees);
     };
 
 	getBackgroundImage = () => {
@@ -115,7 +128,7 @@ export default class ImageCropRotate extends PureComponent {
 	                      type="file"
 	                      accept="image/*"
 	                      onChange={(e)=>this.handleImageChange(e)} 
-	                      className="choose-file-button" />
+	                      className="" />
 		            </label>
 	          	</form>
 
@@ -135,7 +148,7 @@ export default class ImageCropRotate extends PureComponent {
                       </div>
                   }
 
-	          	<img src={this.state.imagePreviewUrl} />
+	          	{ /* <img src={this.state.imagePreviewUrl} /> */}
 
 	          	<div className="image-preview-container" style={this.getBackgroundImage()}>
                   <ReactCrop
@@ -150,3 +163,4 @@ export default class ImageCropRotate extends PureComponent {
 		)
 	}
 }
+
