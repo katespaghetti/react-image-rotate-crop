@@ -11,7 +11,8 @@ export default class ImageCropRotate extends PureComponent {
         newImageUrl: null,
         imagePickerUrl: '',
         rotationDegrees: 0,
-        hidden: true
+        hidden: true,
+        defaultImage: false
 	}
 
 	getImageStateAndProps = () => {
@@ -23,7 +24,7 @@ export default class ImageCropRotate extends PureComponent {
 
 	onImageLoaded = (image) => {
     	console.log("loaded")
-
+    	this.rotate(this.state.rotationDegrees);
         const crop = 
             makeAspectCrop({
                 x: 0,
@@ -106,6 +107,22 @@ export default class ImageCropRotate extends PureComponent {
         this.props.rotateImageCallback(rotationDegrees);
     };
 
+    rotate = (rotationDegrees) => {
+        const { originalImgWidth, originalImgHeight, imagePreviewUrl } = this.state;
+
+        getRotatedImg(
+            {
+                imagePreviewUrl: this.state.imagePickerUrl,
+                width: originalImgWidth,
+                height: originalImgHeight,
+                degrees: this.state.rotationDegrees + rotationDegrees
+            },
+            (dataUrl) => {
+                this.setState({newImageUrl: dataUrl});
+            } 
+        )
+    }
+
 	getBackgroundImage = () => {
     	if (this.state.defaultImage != true) {
             const style = {
@@ -118,6 +135,7 @@ export default class ImageCropRotate extends PureComponent {
 
 	render() {
 		const { crop, hidden } = this.state;
+		console.log("this is the state", this.state);
 
 		return (
 			<div>
@@ -148,14 +166,12 @@ export default class ImageCropRotate extends PureComponent {
                       </div>
                   }
 
-	          	{ /* <img src={this.state.imagePreviewUrl} /> */}
-
 	          	<div className="image-preview-container" style={this.getBackgroundImage()}>
                   <ReactCrop
                       onChange={this.onChange}
                       onImageLoaded={this.onImageLoaded}
                       crop={crop}
-                      src={this.state.imagePickerUrl}
+                      src={this.state.imagePreviewUrl}
                       keepSelection={true}
                   />
               </div>
