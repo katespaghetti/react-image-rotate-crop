@@ -1,23 +1,32 @@
-import React, { Component } from 'react';
-import ReactCrop, { makeAspectCrop } from 'react-image-crop';
-import 'react-image-crop/lib/ReactCrop.scss';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import ReactCrop, { makeAspectCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
+
 import { getCroppedImg, getRotatedImg } from './cropRotateUtils';
+import { defaultImage } from './defaultImage.jpeg';
 
-export default class ImageCropRotate extends Component {
-    state = {
-        hiddenButtons: true,
-        newImage: null,
-        imagePickerUrl: ''
-    };
+export default class ImageCropRotate extends React.Component {
+	state = {
+		file: "",
+        imagePreviewUrl: null,
+        newImageUrl: null,
+        imagePickerUrl: '',
+        rotationDegrees: 0,
+        hidden: true,
+        defaultImage: false
+	}
 
-    getImageStateAndProps = () => {
+	getImageStateAndProps = () => {
         return ({
             ...this.state,
             imagePreviewUrl: this.state.imagePickerUrl
         })
     }
 
-    onImageLoaded = (image) => {
+	onImageLoaded = (image) => {
+    	console.log("loaded")
+    	this.rotate(this.state.rotationDegrees);
         const crop = 
             makeAspectCrop({
                 x: 0,
@@ -43,14 +52,11 @@ export default class ImageCropRotate extends Component {
         getCroppedImg({
             ...this.getImageStateAndProps(),
             ...data,
-            // degrees: this.props.profileInfo.rotationDegrees
+            degrees: this.state.rotationDegrees
             },
             true,
             (dataUrl) => {
-                // this.props.updateProfileImage(dataUrl);
-                this.setState({
-                    newImage: dataUrl
-                })
+                this.state.updateImage(dataUrl);
             }
         );
     }
@@ -68,169 +74,110 @@ export default class ImageCropRotate extends Component {
             this.getImageStateAndProps(),
             true,
             (dataUrl) => {
-                // this.props.updateProfileImage(dataUrl)
-                this.setState({
-                    newImage: dataUrl
-                })
+                this.state.updateImage(dataUrl)
             }
         );
     }
 
-    toggleImageUploadPanel = () => {
-        this.setState({
-            ...this.state,
-            hidden: !this.state.hidden,
-            imagePickerUrl: '',
-            newImage: null 
-        })
-    }
-
-    handleSubmit = (e) => {
-        e.preventDefault();
-        // const { uploadProfileImage, settings, profileInfo, toggleImageUploadPanel, uploadProfileImageButtonClick } = this.props;
-
-        const { uploadProfileImage, settings, profileInfo, toggleImageUploadPanel } = this.props;
-
-        getCroppedImg({
-                ...this.getImageStateAndProps(),
-                degrees: profileInfo.rotationDegrees
-            },
-            false,
-            (croppedImgBlob) => {
-                // uploadProfileImage(api, settings.communityServiceUrl, croppedImgBlob);
-                // toggleImageUploadPanel();
-            }
-        )
-
-        // uploadProfileImageButtonClick();
-    }
+	handleSubmit = (e) => {
+	    console.log("in the submit");
+	}
 
     handleImageChange = (e) => {
-        e.preventDefault();
-        const reader = new FileReader();
-        const file = e.target.files[0];
+	    e.preventDefault();
 
-        reader.onloadend = () => {
-            // this.props.setProfileImageUrl(reader.result);
-            this.setState({
-                imagePickerUrl: reader.result,
-                hiddenButtons: !this.state.hiddenButtons
-            })
-        }
+	    let reader = new FileReader();
+	    let file = e.target.files[0];
 
-        reader.readAsDataURL(file)
-    }
+	    console.log("what is reader.result", reader.result)
+
+	    reader.onloadend = () => {
+			this.setState({
+				file,
+				imagePreviewUrl: reader.result
+			});
+	    }
+
+	    reader.readAsDataURL(file)
+	}
+
+	updateImageRotation = (rotationDegrees) => {
+        this.setState({
+            rotationDegrees: (this.state.rotationDegrees + rotationDegrees) % 360
+        });
+
+        this.props.rotateImageCallback(rotationDegrees);
+    };
 
     rotate = (rotationDegrees) => {
-        const {originalImgWidth, originalImgHeight, imagePreviewUrl, imagePickerUrl } = this.state;
+        const { originalImgWidth, originalImgHeight, imagePreviewUrl } = this.state;
 
         getRotatedImg(
             {
-                imagePreviewUrl: imagePickerUrl,
+                imagePreviewUrl: this.state.imagePickerUrl,
                 width: originalImgWidth,
                 height: originalImgHeight,
-                degrees: this.props.profileInfo.rotationDegrees + rotationDegrees
+                degrees: this.state.rotationDegrees + rotationDegrees
             },
             (dataUrl) => {
-                // this.props.setProfileImageUrl(dataUrl);
-                this.setState({
-                    imagePickerUrl: dataUrl
-                })
+                this.setState({newImageUrl: dataUrl});
             } 
         )
     }
 
-    // edge will force a page refresh on cancel without this
-    cancelImageUpload = (e) => {
-        e.preventDefault();
+	getBackgroundImage = () => {
+    	if (this.state.defaultImage != true) {
+            const style = {
+                backgroundImage: `url(${this.state.newImageUrl})`
+            }
 
-        this.setState({
-            ...this.state,
-            newImage: null,
-            hiddenButtons: true,
-            rotationDegrees: 0,
-            imagePickerUrl: ''
-        })
-    }
-
-    render() {
-        const { hiddenButtons, crop, newImage, imagePickerUrl } = this.state;
-
-        const style = {
-            width: 160,
-            height: 160,
-            minWidth: 160,
-            overflow: "hidden",
-            position: "relative",
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            border: "1px solid #333",
-            backgroundImage: `url(${newImage})`
+            return style;
         }
-
-        console.log("this is the state", this.state);
-
-        return (
-            <div className="image-upload-panel">
-                <div>
-                    <div style={style} />
-                </div>
-
-                <div>
-                    <div className="preview-component-container">
-                        <h3><strong>Upload an image</strong></h3>
-
-                        <form onSubmit={(e)=>this.handleSubmit(e)}>
-                            <label>
-                            Choose Image
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e)=>this.handleImageChange(e)}
-                                />
-                            </label>
-                            <button 
-                                type="submit" 
-                                onClick={(e)=>this.cancelImageUpload(e)}>
-                                Cancel
-                            </button>
-
-                            {!hiddenButtons && 
-                                <button 
-                                    type="submit" 
-                                    onClick={(e)=>this.handleSubmit(e)}>
-                                    Upload
-                                </button>
-                            }
-                        </form>
-
-                        { !hiddenButtons &&
-
-                            <div>
-                                <button onClick={()=>this.rotate(-90)}>
-                                    <i className="fa fa-rotate-left" />
-                                    Rotate left
-                                </button>
-
-                                <button onClick={()=>this.rotate(90)}>
-                                    <i className="fa fa-rotate-right" />
-                                    Rotate right
-                                </button>
-                            </div>
-                        }
-
-                        <div>
-                            <ReactCrop
-                                onChange={this.onChange}
-                                onImageLoaded={this.onImageLoaded}
-                                crop={crop}
-                                src={imagePickerUrl}
-                                keepSelection={true}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
     }
+
+	render() {
+		const { crop, hidden } = this.state;
+		console.log("this is the state", this.state);
+
+		return (
+			<div>
+				<form onSubmit={(e)=>this.handleSubmit(e)}>
+	              	<label>
+	              		Choose Image
+		                <input
+	                      type="file"
+	                      accept="image/*"
+	                      onChange={(e)=>this.handleImageChange(e)} 
+	                      className="" />
+		            </label>
+	          	</form>
+
+
+                  { !hidden &&
+
+                      <div className="button-container">
+                          <button onClick={() => this.updateImageRotation(-90)}>
+                              <i className="fa fa-rotate-left" />
+                              Rotate left
+                          </button>
+
+                          <button onClick={() => this.updateImageRotation(90)}>
+                              <i className="fa fa-rotate-right" />
+                              Rotate right
+                          </button>
+                      </div>
+                  }
+
+	          	<div className="image-preview-container" style={this.getBackgroundImage()}>
+                  <ReactCrop
+                      onChange={this.onChange}
+                      onImageLoaded={this.onImageLoaded}
+                      crop={crop}
+                      src={this.state.imagePreviewUrl}
+                      keepSelection={true}
+                  />
+              </div>
+          	</div>
+		)
+	}
 }
